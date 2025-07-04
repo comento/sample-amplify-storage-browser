@@ -13,6 +13,7 @@ import {
   Link,
   Text,
 } from '@aws-amplify/ui-react';
+import { JSX } from 'react';
 
 const { StorageBrowser, useAction, useView } = createStorageBrowser({
   config: {
@@ -55,7 +56,7 @@ const { StorageBrowser, useAction, useView } = createStorageBrowser({
   },
 });
 
-const GenerateUrlView = (_props: any): JSX.Element => {
+const GenerateUrlView = (): JSX.Element => {
   const {
     onActionExit,
     fileDataItems = [],
@@ -64,7 +65,6 @@ const GenerateUrlView = (_props: any): JSX.Element => {
   } = useView('LocationDetail');
 
   const [resetCount, setResetCount] = React.useState(0);
-
   const bucket = import.meta.env.VITE_S3_BUCKET_NAME;
   const region = import.meta.env.VITE_AWS_REGION;
 
@@ -83,14 +83,14 @@ const GenerateUrlView = (_props: any): JSX.Element => {
     multiple: true,
   });
 
-  const handleGenerateWithReset = async () => {
-    setResetCount((prev) => prev + 1);
-    await handleGenerate();
-  };
-
   const handleExit = () => {
     selectionManager?.clearSelection?.();
     onActionExit();
+  };
+
+  const handleGenerateWithReset = async () => {
+    setResetCount((prev) => prev + 1);
+    await handleGenerate();
   };
 
   const getPublicUrl = (bucket: string, region: string, key: string) =>
