@@ -67,7 +67,6 @@ const { StorageBrowser, useAction, useView } = createStorageBrowser({
   },
 });
 
-// @ts-ignore
 const GenerateUrlView = () => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
@@ -86,9 +85,10 @@ const GenerateUrlView = () => {
     [fileDataItems]
   );
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  const [actionState, handleGenerate] = useAction('generateUrl', { items });
+  const [actionState, handleGenerate] = useAction('generateUrl', {
+    items,
+    multiple: true,
+  });
 
   const handleGenerateWithReset = async () => {
     setResetCount((prev) => prev + 1); // UI 초기화
