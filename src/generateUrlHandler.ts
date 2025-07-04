@@ -5,18 +5,22 @@ type GenerateLink = ActionHandler<
   { link: string }
 >;
 
-export const generateUrlHandler: GenerateLink = async ({ data, config }) => {
-  try {
-    const url = `https://${config.bucket}.s3.${config.region}.amazonaws.com/${encodeURIComponent(data.fileKey)}`;
-    return {
-      status: 'COMPLETE' as const,
-      value: { link: url },
-    };
-  } catch (error) {
-    return {
-      status: 'FAILED' as const,
-      message: 'Unable to generate public link',
-      error,
-    };
-  }
+export const generateUrlHandler: GenerateLink = ({ data, config }) => {
+  const result = (async () => {
+    try {
+      const url = `https://${config.bucket}.s3.${config.region}.amazonaws.com/${encodeURIComponent(data.fileKey)}`;
+      return {
+        status: 'COMPLETE' as const,
+        value: { link: url },
+      };
+    } catch (error) {
+      return {
+        status: 'FAILED' as const,
+        message: 'Unable to generate public link',
+        error,
+      };
+    }
+  })();
+
+  return { result };
 };

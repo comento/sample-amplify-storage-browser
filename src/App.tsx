@@ -1,10 +1,11 @@
 import {
   createStorageBrowser,
+  FileDataItem,
 } from '@aws-amplify/ui-react-storage/browser';
 import '@aws-amplify/ui-react-storage/styles.css';
 import './App.css';
 
-import { generateUrlHandler } from './generateUrlHandler.ts';
+import { generateUrlHandler } from './generateUrlHandler';
 import * as React from 'react';
 import {
   Button,
@@ -13,43 +14,30 @@ import {
   Text,
 } from '@aws-amplify/ui-react';
 
-// import config from '../amplify_outputs.json';
-// import { Amplify } from 'aws-amplify';
-// import { Authenticator, Button, Flex, Heading } from '@aws-amplify/ui-react';
-// Amplify.configure(config);
-
-// const { StorageBrowser } = createStorageBrowser({
-//   config: createAmplifyAuthAdapter(),
-// });
-
 const { StorageBrowser, useAction, useView } = createStorageBrowser({
   config: {
     region: import.meta.env.VITE_AWS_REGION,
     accountId: import.meta.env.VITE_AWS_ACCOUNT_ID,
-    listLocations: async () => {
-      return {
-        items: [
-          {
-            bucket: import.meta.env.VITE_S3_BUCKET_NAME,
-            prefix: '',
-            id: 'root',
-            type: 'BUCKET',
-            permissions: ['list', 'get', 'write', 'delete'],
-          },
-        ],
-        nextToken: undefined
-      };
-    },
-    getLocationCredentials: async () => {
-      return {
-        credentials: {
-          accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-          secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
-          sessionToken: '',
-          expiration: new Date(Date.now() + 3600000),
+    listLocations: async () => ({
+      items: [
+        {
+          bucket: import.meta.env.VITE_S3_BUCKET_NAME,
+          prefix: '',
+          id: 'root',
+          type: 'BUCKET',
+          permissions: ['list', 'get', 'write', 'delete'],
         },
-      };
-    },
+      ],
+      nextToken: undefined,
+    }),
+    getLocationCredentials: async () => ({
+      credentials: {
+        accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+        secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+        sessionToken: '',
+        expiration: new Date(Date.now() + 3600000),
+      },
+    }),
     registerAuthListener: () => {},
   },
   actions: {
@@ -67,10 +55,14 @@ const { StorageBrowser, useAction, useView } = createStorageBrowser({
   },
 });
 
-const GenerateUrlView = () => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  const { onActionExit, fileDataItems, selectionManager } = useView('LocationDetail');
+const GenerateUrlView: React.FC = () => {
+  const {
+    onActionExit,
+    fileDataItems = [],
+    // @ts-expect-error: Not yet typed in Amplify UI
+    selectionManager,
+  } = useView('LocationDetail');
+
   const [resetCount, setResetCount] = React.useState(0);
 
   const bucket = import.meta.env.VITE_S3_BUCKET_NAME;
@@ -78,10 +70,11 @@ const GenerateUrlView = () => {
 
   const items = React.useMemo(
     () =>
-      fileDataItems?.map((item) => ({
+      fileDataItems.map((item: FileDataItem & { key: string }) => ({
         ...item,
         fileKey: item.key,
-      })) ?? [],
+        duration: 60, // default duration (can be removed if unused)
+      })),
     [fileDataItems]
   );
 
@@ -91,14 +84,11 @@ const GenerateUrlView = () => {
   });
 
   const handleGenerateWithReset = async () => {
-    setResetCount((prev) => prev + 1); // UI 초기화
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
+    setResetCount((prev) => prev + 1);
     await handleGenerate();
   };
 
   const handleExit = () => {
-    // ⬅️ 선택 초기화
     selectionManager?.clearSelection?.();
     onActionExit();
   };
@@ -107,30 +97,28 @@ const GenerateUrlView = () => {
     `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text).catch((err) => {
-      console.error('Copy failed', err);
-    });
+    navigator.clipboard.writeText(text).catch(console.error);
   };
 
   return (
     <Flex direction="column" padding="1.5rem" gap="1.5rem" key={resetCount}>
-      {/* 좌측 상단 Exit */}
       <Flex>
-        <Button
-          onClick={handleExit}
-          variation="link"
-          size="small"
-        >
+        <Button onClick={handleExit} variation="link" size="small">
           ← Exit
         </Button>
       </Flex>
 
-      {/* Generate Button */}
       <Button onClick={handleGenerateWithReset}>Generate Links</Button>
 
-      {/* 결과 출력 */}
-      {actionState.tasks?.map(({ data, status, value }) => {
+      {(actionState.tasks ?? []).map((task) => {
+        const { data, status, value } = task as {
+          data: { fileKey: string };
+          status: string;
+          value?: { link: string };
+        };
+
         const url = value?.link || getPublicUrl(bucket, region, data.fileKey);
+
         return (
           <Flex
             key={data.fileKey}
@@ -159,21 +147,8 @@ const GenerateUrlView = () => {
   );
 };
 
-function App() {
-  return (
-    // <Authenticator>
-    //   {({ signOut, user }) => (
-    //     <>
-    //       <Flex direction="row" alignItems="center" wrap="nowrap" gap="1rem">
-    //         <Heading level={4}>{`Hello ${user?.username}`}</Heading>
-    //         <Button onClick={signOut}>Sign out</Button>
-    //       </Flex>
-    //       <StorageBrowser />
-    //     </>
-    //   )}
-    // </Authenticator>
-    <StorageBrowser views={{ GenerateUrlView }} />
-  );
-}
+const App: React.FC = () => {
+  return <StorageBrowser views={{ GenerateUrlView }} />;
+};
 
 export default App;
