@@ -55,7 +55,7 @@ const { StorageBrowser, useAction, useView } = createStorageBrowser({
   },
 });
 
-const GenerateUrlView: React.FC = () => {
+const GenerateUrlView = (_props: any): JSX.Element => {
   const {
     onActionExit,
     fileDataItems = [],
@@ -73,7 +73,7 @@ const GenerateUrlView: React.FC = () => {
       fileDataItems.map((item: FileDataItem & { key: string }) => ({
         ...item,
         fileKey: item.key,
-        duration: 60, // default duration (can be removed if unused)
+        duration: 60,
       })),
     [fileDataItems]
   );
